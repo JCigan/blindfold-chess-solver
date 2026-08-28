@@ -35,11 +35,24 @@ def bold(t): return c(t, "1")
 CASTLE_RE = re.compile(r"^[0oO](-[0oO]){1,2}[+#]?$")
 
 
+def _ambiguity_options(board: chess.Board, text: str) -> List[str]:
+    """The legal moves a piece-and-square SAN like 'Rd8' could have meant."""
+    match = re.match(r"^([KQRBN])[a-h1-8]*x?([a-h][1-8])", text)
+    if not match:
+        return []
+    piece_type = chess.Piece.from_symbol(match.group(1)).piece_type
+    target = chess.parse_square(match.group(2))
+    return sorted(
+        board.san(m) for m in board.legal_moves
+        if m.to_square == target and board.piece_type_at(m.from_square) == piece_type
+    )
+
+
 def parse_move(board: chess.Board, text: str) -> Tuple[Optional[chess.Move], Optional[str]]:
     """Accept SAN or UCI, forgivingly. Returns (move, error_message)."""
     text = text.strip().replace("–", "-").replace("—", "-")
     if not text:
-        return None, "Say something."
+        return None, None
 
     candidates = [text]
     if CASTLE_RE.match(text):
@@ -59,15 +72,29 @@ def parse_move(board: chess.Board, text: str) -> Tuple[Optional[chess.Move], Opt
         if move is not None:
             if move in board.legal_moves:
                 return move, None
-            return None, "{} is not a legal move here.".format(text)
+            return None, "{} isn't legal in this position.".format(text)
 
+    # Valid notation for a move that isn't available is a different mistake from
+    # notation that doesn't parse, and saying so saves you re-reading your input.
+    best_rank, best_message = -1, None
     for candidate in candidates:
         try:
             return board.parse_san(candidate), None
-        except ValueError:
-            continue
+        except chess.AmbiguousMoveError:
+            options = _ambiguity_options(board, candidate)
+            message = "{} is ambiguous here{}.".format(
+                candidate, ": " + " or ".join(options) if options else "")
+            rank = 2
+        except chess.IllegalMoveError:
+            message = "{} isn't legal in this position.".format(candidate)
+            rank = 1
+        except ValueError:  # InvalidMoveError, and anything else parse_san raises
+            message = "I can't read '{}'. Use SAN (Nf3, exd5, O-O) or UCI (g1f3).".format(text)
+            rank = 0
+        if rank > best_rank:
+            best_rank, best_message = rank, message
 
-    return None, "I can't read '{}' as a legal move. Use SAN (Nf3, exd5, O-O) or UCI (g1f3).".format(text)
+    return None, best_message
 
 
 def format_line(fen: str, ucis: List[str]) -> str:
@@ -169,7 +196,8 @@ class Trainer:
 
             move, error = parse_move(board, answer)
             if move is None:
-                print(dim("  " + error))
+                if error:
+                    print(dim("  " + error))
                 continue
 
             san = board.san(move)
