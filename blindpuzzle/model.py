@@ -108,8 +108,8 @@ class Puzzle:
         if start_fen and last_move and pgn:
             prev_fen = _prev_fen_from_pgn(pgn, start_fen, last_move)
         elif pgn and p.get("initialPly") is not None:
-            # /api/puzzle/next omits fen and lastMove -- only /daily and
-            # /api/puzzle/{id} include them -- so replay the game instead.
+            # /api/puzzle/next omits fen and lastMove. Only /daily and
+            # /api/puzzle/{id} include them, so replay the game instead.
             prev_fen, start_fen, last_move = _positions_from_pgn(
                 pgn, p["initialPly"], p["solution"][0])
         if not start_fen:
@@ -137,8 +137,8 @@ def _prev_fen_from_pgn(pgn: str, start_fen: str, last_move: str) -> Optional[str
     """Replay the game to recover the position before the puzzle's setup move.
 
     The API hands us the position the solver faces but not the one before it,
-    and you cannot un-make a move without knowing what it captured -- so we
-    replay the game's SAN and stop at the ply that reproduces ``start_fen``.
+    and you cannot un-make a move without knowing what it captured, so this
+    replays the game's SAN and stops at the ply that reproduces ``start_fen``.
     """
     board = chess.Board()
     target = _fen_key(start_fen)

@@ -1,8 +1,8 @@
 """Where puzzles come from: the lichess API, or the local puzzle database.
 
-The API needs no setup but cannot filter by rating range -- lichess only
-exposes a difficulty relative to *your* puzzle rating, and only when
-authenticated.  Rating ranges therefore require the downloaded database.
+The API needs no setup but cannot filter by rating range. Lichess exposes
+only a difficulty relative to your own puzzle rating, and only when
+authenticated, so rating ranges require the downloaded database.
 """
 
 from __future__ import annotations
@@ -22,7 +22,7 @@ from .model import Puzzle
 DB_URL = "https://database.lichess.org/lichess_db_puzzle.csv.zst"
 USER_AGENT = "blindpuzzle/1.0 (personal blindfold trainer)"
 
-# macOS ships LibreSSL, which makes urllib3 grumble on import. Not our problem.
+# macOS ships LibreSSL, which makes urllib3 warn on import.
 warnings.filterwarnings("ignore", message=".*OpenSSL.*")
 
 
@@ -87,7 +87,7 @@ class LichessApi:
         return Puzzle.from_api(self._get("next", params))
 
     def stream(self, theme: Optional[str] = None, count: int = 10) -> Iterator[Puzzle]:
-        """The API has no unauthenticated batch endpoint, so we poll politely."""
+        """The API has no unauthenticated batch endpoint, so poll one at a time."""
         seen = set()
         misses = 0
         while len(seen) < count and misses < 10:
@@ -226,9 +226,9 @@ def build_index(limit: Optional[int] = None, source: Optional[str] = None) -> st
     print("\r  {:,} puzzles indexed. Building index...".format(total))
     # Covering index: themes rides along in the index, so a rating+theme filter
     # never reads the table for candidates that fail the theme test. A plain
-    # index on rating alone made that cost ~465k random row reads -- 18s cold.
-    # rating leads, so this serves rating-only queries too; a second index on
-    # rating by itself would be redundant, and the planner picked it wrongly.
+    # An index on rating alone cost ~465k random row reads, 18s on a cold
+    # cache. rating leads here, so this serves rating-only queries too; a
+    # separate rating index is redundant and misleads the query planner.
     connection.execute(
         "CREATE INDEX IF NOT EXISTS idx_rating_themes ON puzzles(rating, themes)")
     # Without stats the planner ignores the covering index entirely.

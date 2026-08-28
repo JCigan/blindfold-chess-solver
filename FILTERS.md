@@ -1,8 +1,7 @@
 # Filtering puzzles
 
-Everything you can select on, and every value it takes. Counts come from the
-6,100,960 puzzles indexed on 2026-08-27 17:48; `./puzzle themes` prints them live from your own
-index, which is the authority if lichess has added anything since.
+Every filter and every value it accepts. Counts come from the 6,100,960 puzzles
+indexed on 2026-08-27 17:48. `./puzzle themes` prints current counts from your own index.
 
 ## Quick reference
 
@@ -33,10 +32,9 @@ source, though the API takes only one at a time.
 ./puzzle play --min-rating 2000 # same thing, spelled out
 ```
 
-Ratings in the database run 399 to 3322. They are lichess puzzle ratings, which
-drift well above player ratings at the top end -- a 2500 puzzle is not a
-position a 2500 player finds automatically, since the rating reflects how
-often solvers actually fail it.
+Ratings run 399 to 3322. These are lichess puzzle ratings, not player ratings.
+They track how often solvers fail a puzzle, so they sit well above the
+playing strength needed to find the move.
 
 ## Themes
 
@@ -47,9 +45,9 @@ often solvers actually fail it.
 ./puzzle play -t "fork,pin"            # commas work too
 ```
 
-Most puzzles carry several themes at once -- a short mating tactic is usually
-tagged `mate`, `mateIn2`, `short` and `middlegame` together -- so stacking them
-narrows the field quickly. A misspelling gets a suggestion rather than an empty
+Most puzzles carry several themes at once. A short mating tactic is usually
+tagged `mate`, `mateIn2`, `short` and `middlegame` together, so stacking themes
+narrows the field fast. A misspelling gets a suggestion instead of an empty
 result.
 
 ### How the puzzle ends
@@ -189,16 +187,16 @@ These all carry `endgame` as well.
 ./puzzle play --opening Kings_Gambit -r 2000-2400   # with anything else
 ```
 
-1,214,759 puzzles carry an opening tag: 156 families and 1,589 distinct
-variation tags. Tags are lichess's opening names with underscores for spaces,
-and a puzzle usually carries both its family and its variation
+1,214,759 puzzles carry an opening tag, across 156 families and 1,589 variation
+tags. Tags are lichess's opening names with underscores for spaces, and a
+puzzle usually carries both its family and its variation
 (`Sicilian_Defense Sicilian_Defense_Najdorf_Variation`). Matching is on
 substrings, so `--opening Sicilian` catches every Sicilian and `--opening
-Najdorf` catches the Najdorf under any spelling of its parent.
+Najdorf` catches the Najdorf under any parent.
 
-Note that an opening *tag* is not the `opening` *theme*: 1,214,759 puzzles are
-tagged with an opening, while 290,640 carry the `opening` theme, which means the
-puzzle occurs during the opening phase. A tagged puzzle can be a middlegame.
+An opening tag is not the same as the `opening` theme. 1,214,759 puzzles carry a
+tag; 290,640 carry the `opening` theme, meaning the puzzle happens during the
+opening phase. A tagged puzzle is often a middlegame.
 
 ### Every family
 
@@ -361,11 +359,10 @@ puzzle occurs during the opening phase. A tagged puzzle can be a middlegame.
 | `Zaire_Defense` | 2 |
 | `Amsterdam_Attack` | 1 |
 
-Variation tags are not listed -- there are 1,589 of them -- but they are all
-this family name plus a suffix, so `--opening Sicilian_Defense_` with a
-variation name works if you know it.
+The 1,589 variation tags aren't listed. Each is a family name plus a suffix,
+so `--opening Sicilian_Defense_Najdorf` works if you know the name.
 
-## How well-tested a puzzle is
+## Play count
 
 ```sh
 ./puzzle play --min-plays 1000
@@ -373,7 +370,7 @@ variation name works if you know it.
 
 Puzzle ratings settle as more people attempt them, so a puzzle with a handful
 of plays has a rating that is mostly guesswork. `--min-plays` filters on the
-attempt count, which ranges from 0 to about 313,000.
+attempt count, which runs from 0 to about 313,000.
 
 ## Choosing which puzzles come up
 
@@ -384,13 +381,11 @@ attempt count, which ranges from 0 to about 313,000.
 ./puzzle play --daily           # today's lichess puzzle
 ```
 
-Without `--seed`, selection is random over everything matching. With one, the
-same seed and the same filters give the same puzzles in the same order, which
-is what you want for comparing yourself over time or re-running a set.
+Without `--seed`, selection is random across everything matching. With one,
+the same seed and the same filters return the same puzzles in the same order.
 
 ## In the data but not filterable
 
-The index also stores each puzzle's popularity (a vote score from -83 to 100)
-and its lichess game URL, and the solution's length is implied by the
-`oneMove`/`short`/`long`/`veryLong` themes. None of those are exposed as
-filters, nor is which colour you play. Say the word if any would be useful.
+The index also stores each puzzle's popularity, a vote score from -83 to 100.
+Solution length is implied by the `oneMove`, `short`, `long` and `veryLong`
+themes. Neither is exposed as a filter, and nor is the colour you play.

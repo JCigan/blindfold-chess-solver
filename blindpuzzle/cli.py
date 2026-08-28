@@ -113,7 +113,7 @@ def puzzle_stream(args) -> Iterator[Puzzle]:
     if source == "auto":
         source = "db" if sources.have_local_db() else "api"
         if source == "api":
-            print(dim("No local database yet -- using the lichess API."))
+            print(dim("No local database yet, using the lichess API."))
             if args.min_rating or args.max_rating:
                 print(yellow("Rating filters need the local database: "
                              "run './puzzle fetch && ./puzzle index'. Ignoring them for now."))
@@ -134,7 +134,7 @@ def puzzle_stream(args) -> Iterator[Puzzle]:
 
     # API
     if args.min_rating or args.max_rating:
-        print(yellow("The lichess API can't filter by rating range -- ignoring it. "
+        print(yellow("The lichess API can't filter by rating range, so it is ignored. "
                      "Use the local database for that."))
     if len(themes) > 1:
         print(yellow("The API takes one theme at a time; using '{}'.".format(themes[0])))

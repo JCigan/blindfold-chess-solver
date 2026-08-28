@@ -1,4 +1,4 @@
-"""The interactive solving loop -- lichess's puzzle behaviour, without a board."""
+"""The interactive solving loop: lichess puzzle behaviour, without a board."""
 
 from __future__ import annotations
 
@@ -90,9 +90,9 @@ def format_line(fen: str, ucis: List[str]) -> str:
 HELP_TEXT = """
   Enter your move in SAN (Nf3, exd5, Qxg3+, O-O) or UCI (g1f3, e7e8q).
   Other commands:
-    info / show    re-print the position description
-    hint           name the piece you should move (counts as help)
-    board          print the board (defeats the point, but it's here)
+    info / show    re-print the position
+    hint           name the piece to move (counts as help)
+    board          print the board
     solution       give up and see the line
     next / skip    move on to the next puzzle
     quit           leave
@@ -241,7 +241,7 @@ class Trainer:
         print(dim("  " + self._footer(puzzle)))
 
     def _footer(self, puzzle: Puzzle) -> str:
-        """Rating and themes belong here, after the fact -- both are spoilers."""
+        """Rating and themes go here, after the fact. Both are spoilers."""
         bits = []
         if puzzle.rating is not None:
             bits.append("rating {}".format(puzzle.rating))

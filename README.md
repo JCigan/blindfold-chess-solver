@@ -2,11 +2,10 @@
 
 Solve [lichess](https://lichess.org/training) puzzles blindfold, from the terminal.
 
-It prints the position — piece locations, castling rights, the last move (in
-SAN, with where the piece came from), whose turn it is — and then plays the
-puzzle the way the lichess trainer does: you
-enter a move, it tells you if it's wrong, and if it's right it answers with the
-opponent's reply and waits for your next one.
+It prints the position: piece locations, castling rights, the last move, whose
+turn it is. Then it runs the puzzle the way the lichess trainer does. You enter
+a move. If it's wrong it says so. If it's right it plays the opponent's reply
+and waits for your next one.
 
 ```
 --------------------------------------------------------------
@@ -47,38 +46,35 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-That's it — `./puzzle` finds `.venv` on its own. Requires Python 3.8+.
+`./puzzle` finds `.venv` on its own. Needs Python 3.8 or later.
 
-On Windows use `puzzle.cmd` in place of `./puzzle` (same arguments), after
-`py -m venv .venv` and `.venv\Scripts\pip install -r requirements.txt`. Git Bash
-and WSL can use `./puzzle` as normal. Colour output needs Windows Terminal or
-PowerShell 7; set `NO_COLOR=1` if you get stray escape codes in the old console.
+On Windows, use `puzzle.cmd` in place of `./puzzle` with the same arguments,
+after `py -m venv .venv` and `.venv\Scripts\pip install -r requirements.txt`.
+Git Bash and WSL can use `./puzzle`. Colour needs Windows Terminal or
+PowerShell 7; set `NO_COLOR=1` if the old console prints stray escape codes.
 
-Check it works (solves a few puzzles automatically):
-
-```sh
-./puzzle selftest
-```
+`./puzzle selftest` checks the install by fetching a few puzzles and solving
+them automatically.
 
 ## Two sources of puzzles
 
-**The lichess API** works immediately, no download. It can filter by theme but
-**not by rating range** — lichess only offers a difficulty relative to your own
-puzzle rating, and only when authenticated. It also serves one puzzle per
-request, so a run of ten is ten polite HTTP calls.
+**The lichess API** needs no download and can filter by theme. It cannot filter
+by rating range: lichess offers only a difficulty relative to your own puzzle
+rating, and only when authenticated. It also serves one puzzle per request.
 
-**The puzzle database** is lichess's full public export: ~5.9 million puzzles
-with ratings, themes and openings. Filters on anything, instantly, offline.
-One-time setup:
+**The puzzle database** is lichess's full public export, 6.1 million puzzles
+with ratings, themes and openings. It filters on any of them, offline, in well
+under a second. One-time setup:
 
 ```sh
-./puzzle fetch     # ~300 MB download
-./puzzle index     # builds ~1.1 GB of searchable SQLite; takes a few minutes
+./puzzle fetch     # 300 MB download
+./puzzle index     # builds a 1.4 GB SQLite index, a few minutes
 ```
 
-After indexing you can delete the `.csv.zst` archive. Both live in
-`~/.local/share/blindpuzzle/` (override with `$BLINDPUZZLE_DIR`). Re-run both
-commands whenever you want a fresher set — lichess updates the export monthly.
+Delete the `.csv.zst` archive afterwards if you want the space back. Both files
+live in `~/.local/share/blindpuzzle/`, or wherever `$BLINDPUZZLE_DIR` points.
+Lichess refreshes the export monthly, so re-run both commands when you want a
+newer set.
 
 `./puzzle play` uses the database if it's there and the API if it isn't.
 
@@ -93,7 +89,7 @@ commands whenever you want a fresher set — lichess updates the export monthly.
 ./puzzle play -t pin -t skewer --any-theme
 ./puzzle play -r 1800-2100 -t sacrifice -n 20
 ./puzzle play --min-plays 1000           # only well-tested puzzles
-./puzzle play --opening Sicilian          # or Najdorf, or Kings_Gambit_Accepted
+./puzzle play --opening Sicilian         # or Najdorf, or Kings_Gambit_Accepted
 ./puzzle play --id sAIXc                 # one specific puzzle
 ./puzzle play --daily                    # today's lichess puzzle
 ./puzzle play --seed 42                  # same puzzles again, in the same order
@@ -104,40 +100,39 @@ commands whenever you want a fresher set — lichess updates the export monthly.
 ./puzzle stats                           # what's in your local database
 ```
 
-Both `-r/--rating` and the separate `--min-rating`/`--max-rating` work; the
-range form is just shorter. `./puzzle -r 1400-1700` (no `play`) works too.
+`-r/--rating` and `--min-rating`/`--max-rating` do the same job; the range form
+is shorter. `./puzzle -r 1400-1700` works without typing `play`.
 
-**[FILTERS.md](FILTERS.md) is the full reference** — every flag, all 73 themes
-with lichess's own descriptions and counts, and all 156 opening families. For a
-live listing from your own index, `./puzzle themes`. A misspelled theme gets a
-suggestion rather than an empty result.
+[FILTERS.md](FILTERS.md) is the full reference: every flag, all 73 themes with
+lichess's own descriptions and counts, and all 156 opening families.
+`./puzzle themes` lists them live from your own index. A misspelled theme gets
+a suggestion instead of an empty result.
 
 ## While solving
 
-Enter moves in **SAN** (`Nf3`, `exd5`, `Qxg3+`, `O-O`, `e8=Q`) or **UCI**
-(`g1f3`, `e7e8q`). Lowercase piece letters and `0-0` are accepted. Anything
-illegal or unreadable is rejected without counting as a wrong answer, so a typo
-costs you nothing.
+Moves go in as SAN (`Nf3`, `exd5`, `Qxg3+`, `O-O`, `e8=Q`) or UCI (`g1f3`,
+`e7e8q`). Lowercase piece letters and `0-0` work. Anything illegal or
+unreadable is rejected without counting as a wrong answer, so typos cost you
+nothing.
 
 | command | |
 |---|---|
 | `info` / `show` | re-print the position |
-| `hint` | names the piece you should move (same hint lichess gives) |
-| `board` | prints the board — defeats the purpose, but it's there |
-| `solution` | give up, see the whole line |
+| `hint` | names the piece to move, the same hint lichess gives |
+| `board` | print the board |
+| `solution` | give up and see the line |
 | `next` / `skip` | move on |
 | `quit` | leave |
 
-**Wrong move** → it says so and offers: keep trying, see the solution, next
-puzzle, or quit. **Right move** → it plays the opponent's reply and asks for
-your next move, until the line is done. **Solved** → success message with the
-full line and the puzzle's themes, then next puzzle or quit.
+A wrong move offers: keep trying, see the solution, next puzzle, or quit. A
+right move gets the opponent's reply and the prompt back. Finishing the line
+prints the solution and offers the next puzzle or the exit.
 
-As on lichess, if the puzzle ends in mate and you find a *different* mate, that
-counts. A running tally prints when you exit.
+If the puzzle ends in mate and you find a different mate, it counts, as on
+lichess. A tally prints when you leave.
 
-The puzzle's rating and themes are spoilers, so they appear only once you're
-done with it. `--show-themes` puts the themes up front if you want them.
+Rating and themes are spoilers, so they appear only once you're done with a
+puzzle. `--show-themes` puts the themes up front.
 
 ## How it works
 
@@ -147,19 +142,19 @@ done with it. `--show-themes` puts the themes up front if you want them.
 |---|---|
 | `model.py` | the `Puzzle` type, and normalising the two sources into it |
 | `sources.py` | lichess API client; database download, index and queries |
-| `describe.py` | the blindfold readout |
+| `describe.py` | the position readout |
 | `session.py` | move parsing and the interactive solving loop |
 | `cli.py` | argument handling |
 
-One wrinkle worth knowing, since it bites everyone who touches this data: the
-two sources disagree about where a puzzle starts. The CSV's `FEN` is the
-position *before* the opponent's setup move, with that move first in `Moves`.
-The API's `fen` is the position *after* it, with the move given separately as
-`lastMove`. Both are normalised to the same internal shape, which keeps both
-the position you face and the one before it — you need the earlier one to write
-the last move in SAN at all, since SAN is only defined relative to the position
-the move was made in.
+The two sources disagree about where a puzzle starts. The CSV's `FEN` is the
+position before the opponent's setup move, and that move is the first entry in
+`Moves`. The API's `fen` is the position after it, with the move given
+separately as `lastMove`. `/api/puzzle/next` omits both and has to be rebuilt
+by replaying the game PGN. All three normalise to one internal shape holding
+the position you face and the one before it. That earlier position is what
+makes it possible to write the last move in SAN, since SAN is only defined
+relative to the position a move was made in.
 
-Move legality, SAN parsing and check/mate detection are
-[python-chess](https://python-chess.readthedocs.io/); the solution lines are
-lichess's own.
+Move legality, SAN parsing and mate detection come from
+[python-chess](https://python-chess.readthedocs.io/). The solution lines are
+lichess's.

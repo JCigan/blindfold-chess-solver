@@ -74,7 +74,7 @@ def last_move_text(puzzle: Puzzle) -> str:
 
 
 def _origin(before: chess.Board, move: chess.Move) -> str:
-    """Where the piece came from -- SAN alone often doesn't say."""
+    """Where the piece came from. SAN alone often doesn't say."""
     if before.is_castling(move):
         return "castles {}".format(
             "kingside" if chess.square_file(move.to_square) > 4 else "queenside")
@@ -118,7 +118,7 @@ def describe(puzzle: Puzzle, show_themes: bool = False, width: int = 62) -> str:
 
 
 def ascii_board(board: chess.Board, perspective: Optional[bool] = None) -> str:
-    """A peek at the board. Defeats the purpose, but useful when you're stuck."""
+    """Print the board, for when you are stuck."""
     flipped = perspective == chess.BLACK
     text = str(board.transform(chess.flip_vertical).transform(chess.flip_horizontal)) if flipped else str(board)
     rows = text.split("\n")
