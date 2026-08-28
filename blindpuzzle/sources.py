@@ -11,6 +11,8 @@ import csv
 import io
 import os
 import sqlite3
+
+import chess
 import sys
 import time
 import warnings
@@ -157,6 +159,26 @@ def _csv_rows(path: str) -> Iterator[dict]:
                       file=sys.stderr)
 
 
+def piece_count(fen: str, setup_move: str) -> int:
+    """Men on the board in the position the solver faces, kings and pawns included.
+
+    Counted after the opponent's setup move, not from the stored FEN: that move
+    is a capture about a third of the time, which would put the count out by one.
+    Uses BaseBoard and a manual capture test rather than a full Board.push, which
+    is several times faster over millions of rows and needs no legality checking.
+    """
+    board = chess.BaseBoard(fen.split()[0])
+    count = chess.popcount(board.occupied)
+    move = chess.Move.from_uci(setup_move)
+    if board.piece_type_at(move.to_square) is not None:
+        return count - 1
+    # En passant: a pawn changing file onto an empty square.
+    if (board.piece_type_at(move.from_square) == chess.PAWN
+            and chess.square_file(move.from_square) != chess.square_file(move.to_square)):
+        return count - 1
+    return count
+
+
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS puzzles (
     id         TEXT PRIMARY KEY,
@@ -166,7 +188,8 @@ CREATE TABLE IF NOT EXISTS puzzles (
     popularity INTEGER,
     plays      INTEGER,
     themes     TEXT,
-    openings   TEXT
+    openings   TEXT,
+    pieces     INTEGER
 );
 CREATE TABLE IF NOT EXISTS theme_counts (theme TEXT PRIMARY KEY, n INTEGER);
 CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT);
@@ -202,22 +225,26 @@ def build_index(limit: Optional[int] = None, source: Optional[str] = None) -> st
             continue
         row_themes = (row.get("Themes") or "").split()
         themes.update(row_themes)
+        try:
+            pieces = piece_count(row["FEN"], row["Moves"].split()[0])
+        except (ValueError, IndexError, KeyError):
+            pieces = None
         batch.append((
             row["PuzzleId"], row["FEN"], row["Moves"], rating,
             _safe_int(row.get("Popularity")), _safe_int(row.get("NbPlays")),
-            " ".join(row_themes), (row.get("OpeningTags") or "").strip(),
+            " ".join(row_themes), (row.get("OpeningTags") or "").strip(), pieces,
         ))
         total += 1
         if len(batch) >= 20000:
             connection.executemany(
-                "INSERT OR REPLACE INTO puzzles VALUES (?,?,?,?,?,?,?,?)", batch)
+                "INSERT OR REPLACE INTO puzzles VALUES (?,?,?,?,?,?,?,?,?)", batch)
             batch.clear()
             print("\r  {:,} puzzles...".format(total), end="", flush=True)
         if limit and total >= limit:
             break
 
     if batch:
-        connection.executemany("INSERT OR REPLACE INTO puzzles VALUES (?,?,?,?,?,?,?,?)", batch)
+        connection.executemany("INSERT OR REPLACE INTO puzzles VALUES (?,?,?,?,?,?,?,?,?)", batch)
 
     connection.executemany("INSERT OR REPLACE INTO theme_counts VALUES (?,?)", themes.items())
     connection.execute("INSERT OR REPLACE INTO meta VALUES ('count', ?)", (str(total),))
@@ -230,7 +257,7 @@ def build_index(limit: Optional[int] = None, source: Optional[str] = None) -> st
     # cache. rating leads here, so this serves rating-only queries too; a
     # separate rating index is redundant and misleads the query planner.
     connection.execute(
-        "CREATE INDEX IF NOT EXISTS idx_rating_themes ON puzzles(rating, themes)")
+        "CREATE INDEX IF NOT EXISTS idx_filters ON puzzles(rating, pieces, themes)")
     # Without stats the planner ignores the covering index entirely.
     print("  Analysing...")
     connection.execute("ANALYZE")
@@ -270,6 +297,8 @@ def query(
     match_any: bool = False,
     opening: Optional[str] = None,
     min_plays: Optional[int] = None,
+    min_pieces: Optional[int] = None,
+    max_pieces: Optional[int] = None,
     count: int = 10,
     seed: Optional[int] = None,
 ) -> List[Puzzle]:
@@ -281,6 +310,12 @@ def query(
     if max_rating is not None:
         clauses.append("rating <= ?")
         params.append(max_rating)
+    if min_pieces is not None:
+        clauses.append("pieces >= ?")
+        params.append(min_pieces)
+    if max_pieces is not None:
+        clauses.append("pieces <= ?")
+        params.append(max_pieces)
     if min_plays is not None:
         clauses.append("plays >= ?")
         params.append(min_plays)
@@ -313,6 +348,12 @@ def query(
     connection = _connect()
     try:
         rows = connection.execute(sql, params).fetchall()
+    except sqlite3.OperationalError as exc:
+        if "pieces" in str(exc):
+            raise SystemExit(
+                "This index was built before piece counts existed.\n"
+                "Rebuild it with:  ./puzzle index")
+        raise
     finally:
         connection.close()
 

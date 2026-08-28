@@ -41,6 +41,10 @@ def build_parser() -> argparse.ArgumentParser:
                       help="match any of the given themes instead of all of them")
     play.add_argument("--opening", metavar="TAG", help="filter by opening tag, e.g. Sicilian_Defense")
     play.add_argument("--min-plays", type=int, help="only well-tested puzzles (e.g. 1000)")
+    play.add_argument("--min-pieces", type=int, metavar="N",
+                      help="fewest men on the board, kings and pawns included")
+    play.add_argument("--max-pieces", type=int, metavar="N",
+                      help="most men on the board, e.g. --max-pieces 7 for endgames")
     play.add_argument("-n", "--count", type=int, default=10, help="how many puzzles (default 10)")
     play.add_argument("--id", help="one specific puzzle by id")
     play.add_argument("--daily", action="store_true", help="today's lichess puzzle")
@@ -114,8 +118,8 @@ def puzzle_stream(args) -> Iterator[Puzzle]:
         source = "db" if sources.have_local_db() else "api"
         if source == "api":
             print(dim("No local database yet, using the lichess API."))
-            if args.min_rating or args.max_rating:
-                print(yellow("Rating filters need the local database: "
+            if args.min_rating or args.max_rating or args.min_pieces or args.max_pieces:
+                print(yellow("Rating and piece-count filters need the local database: "
                              "run './puzzle fetch && ./puzzle index'. Ignoring them for now."))
 
     if source == "db":
@@ -123,7 +127,8 @@ def puzzle_stream(args) -> Iterator[Puzzle]:
         puzzles = sources.query(
             min_rating=args.min_rating, max_rating=args.max_rating,
             themes=themes, match_any=args.any_theme, opening=args.opening,
-            min_plays=args.min_plays, count=args.count, seed=args.seed)
+            min_plays=args.min_plays, min_pieces=args.min_pieces,
+            max_pieces=args.max_pieces, count=args.count, seed=args.seed)
         if not puzzles:
             raise SystemExit("No puzzles matched that. Try a wider rating range or fewer themes.")
         if len(puzzles) < args.count:
@@ -133,9 +138,9 @@ def puzzle_stream(args) -> Iterator[Puzzle]:
         return
 
     # API
-    if args.min_rating or args.max_rating:
-        print(yellow("The lichess API can't filter by rating range, so it is ignored. "
-                     "Use the local database for that."))
+    if args.min_rating or args.max_rating or args.min_pieces or args.max_pieces:
+        print(yellow("The lichess API can't filter by rating or piece count, so those "
+                     "are ignored. Use the local database for them."))
     if len(themes) > 1:
         print(yellow("The API takes one theme at a time; using '{}'.".format(themes[0])))
     api = sources.LichessApi()

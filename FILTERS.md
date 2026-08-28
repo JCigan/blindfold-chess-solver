@@ -1,7 +1,7 @@
 # Filtering puzzles
 
 Every filter and every value it accepts. Counts come from the 6,100,960 puzzles
-indexed on 2026-08-27 17:48. `./puzzle themes` prints current counts from your own index.
+indexed on 2026-08-27 22:40. `./puzzle themes` prints current counts from your own index.
 
 ## Quick reference
 
@@ -12,6 +12,7 @@ indexed on 2026-08-27 17:48. `./puzzle themes` prints current counts from your o
 | `-t THEME`, `--theme` | puzzle type; repeatable, all must match |
 | `--any-theme` | make repeated `-t` mean *any* rather than *all* |
 | `--opening TAG` | opening family or variation, matched as a substring |
+| `--min-pieces N`, `--max-pieces N` | men on the board, kings and pawns included |
 | `--min-plays N` | only puzzles played at least N times |
 | `-n N`, `--count` | how many puzzles this session (default 10) |
 | `--id ID` | one specific puzzle |
@@ -20,8 +21,8 @@ indexed on 2026-08-27 17:48. `./puzzle themes` prints current counts from your o
 | `--source db\|api\|auto` | force a source (default: database if indexed) |
 | `--show-themes` | reveal themes before you solve instead of after |
 
-Rating and `--opening` need the local database; themes work against either
-source, though the API takes only one at a time.
+Rating, piece count and `--opening` need the local database. Themes work
+against either source, though the API takes only one at a time.
 
 ## Rating
 
@@ -178,6 +179,35 @@ These all carry `endgame` as well.
 | `master` | 834,842 | Puzzles from games played by titled players. |
 | `masterVsMaster` | 76,730 | Puzzles from games between two titled players. |
 | `superGM` | 3,228 | Puzzles from games played by the best players in the world. |
+
+## Piece count
+
+```sh
+./puzzle play --max-pieces 7                  # endgames, sparse enough to hold
+./puzzle play --min-pieces 20                 # full boards
+./puzzle play --min-pieces 8 --max-pieces 14  # a band
+```
+
+Counts every man on the board, kings and pawns included, in the position you
+are shown. Lichess does not publish this, so it is computed at index time from
+the FEN. It is taken after the opponent's setup move rather than from the
+stored FEN, because that move is a capture about a third of the time.
+
+This cuts finer than the `endgame` theme, which goes by game phase rather than
+material. Cumulative shares of the 6,100,960 indexed puzzles:
+
+| at most | share | puzzles |
+|--:|--:|--:|
+| 5 men | 0.8% | 50,342 |
+| 7 men | 3.5% | 213,351 |
+| 10 men | 11.1% | 678,358 |
+| 12 men | 17.5% | 1,067,730 |
+| 16 men | 37.1% | 2,265,696 |
+| 20 men | 63.0% | 3,841,265 |
+| 24 men | 84.4% | 5,147,696 |
+| 32 men | 100.0% | 6,100,960 |
+
+The range runs from 3 to 32 men.
 
 ## Openings
 

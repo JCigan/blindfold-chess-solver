@@ -214,20 +214,13 @@ class Trainer:
                 print("  {} replies {}".format(opponent, bold(reply_san)))
                 continue
 
-            # Legal, but not the puzzle's move.
+            # Legal, but not the puzzle's move. Fall straight back to the move
+            # prompt: the loop above already takes s/n/q, so trying again costs
+            # no keystrokes and the other choices stay one letter away.
             mistakes += 1
             print(red("  {} is not the move.".format(san)))
-            choice = self.ask(dim("    [k] keep trying   [s] see solution   [n] next puzzle   [q] quit > ")).lower()
-            if choice in ("q", "quit", "exit"):
-                return QUIT
-            if choice in ("n", "next", "skip"):
-                self.stats.skipped += 1
-                self._reveal(puzzle, board, index, "Passed.")
-                return SKIPPED
-            if choice in ("s", "solution", "see"):
-                self.stats.skipped += 1
-                self._reveal(puzzle, board, index, "Solution:")
-                return SKIPPED
+            if mistakes == 1:
+                print(dim("  try again, or: [s] solution  [n] next puzzle  [q] quit"))
             continue
 
         # Solved.

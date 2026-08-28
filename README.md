@@ -88,6 +88,8 @@ newer set.
 ./puzzle play -t mateIn2 -t endgame      # both themes
 ./puzzle play -t pin -t skewer --any-theme
 ./puzzle play -r 1800-2100 -t sacrifice -n 20
+./puzzle play --max-pieces 7             # endgames, by men on the board
+./puzzle play --min-pieces 8 --max-pieces 14
 ./puzzle play --min-plays 1000           # only well-tested puzzles
 ./puzzle play --opening Sicilian         # or Najdorf, or Kings_Gambit_Accepted
 ./puzzle play --id sAIXc                 # one specific puzzle
@@ -102,6 +104,10 @@ newer set.
 
 `-r/--rating` and `--min-rating`/`--max-rating` do the same job; the range form
 is shorter. `./puzzle -r 1400-1700` works without typing `play`.
+
+`--min-pieces`/`--max-pieces` count every man on the board, kings and pawns
+included. Lichess doesn't publish that, so it's computed from the FEN when the
+database is indexed.
 
 [FILTERS.md](FILTERS.md) is the full reference: every flag, all 73 themes with
 lichess's own descriptions and counts, and all 156 opening families.
@@ -124,9 +130,11 @@ nothing.
 | `next` / `skip` | move on |
 | `quit` | leave |
 
-A wrong move offers: keep trying, see the solution, next puzzle, or quit. A
-right move gets the opponent's reply and the prompt back. Finishing the line
-prints the solution and offers the next puzzle or the exit.
+A wrong move says so and hands the prompt straight back, so you can type your
+next attempt without any keystroke in between. `s` shows the solution, `n`
+moves on, `q` leaves. A right move gets the opponent's reply and the prompt
+back. Finishing the line prints the solution and offers the next puzzle or the
+exit.
 
 If the puzzle ends in mate and you find a different mate, it counts, as on
 lichess. A tally prints when you leave.
