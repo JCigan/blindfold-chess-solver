@@ -223,8 +223,17 @@ def build_index(limit: Optional[int] = None, source: Optional[str] = None) -> st
     connection.execute("INSERT OR REPLACE INTO meta VALUES ('count', ?)", (str(total),))
     connection.execute("INSERT OR REPLACE INTO meta VALUES ('built', ?)",
                        (time.strftime("%Y-%m-%d %H:%M"),))
-    print("\r  {:,} puzzles indexed. Building rating index...".format(total))
-    connection.execute("CREATE INDEX IF NOT EXISTS idx_rating ON puzzles(rating)")
+    print("\r  {:,} puzzles indexed. Building index...".format(total))
+    # Covering index: themes rides along in the index, so a rating+theme filter
+    # never reads the table for candidates that fail the theme test. A plain
+    # index on rating alone made that cost ~465k random row reads -- 18s cold.
+    # rating leads, so this serves rating-only queries too; a second index on
+    # rating by itself would be redundant, and the planner picked it wrongly.
+    connection.execute(
+        "CREATE INDEX IF NOT EXISTS idx_rating_themes ON puzzles(rating, themes)")
+    # Without stats the planner ignores the covering index entirely.
+    print("  Analysing...")
+    connection.execute("ANALYZE")
     connection.commit()
     connection.close()
     os.replace(tmp, target)

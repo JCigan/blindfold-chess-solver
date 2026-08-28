@@ -3,6 +3,8 @@
 DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
 if [ -x "$DIR/.venv/bin/python" ]; then
     PY="$DIR/.venv/bin/python"
+elif [ -x "$DIR/.venv/Scripts/python.exe" ]; then
+    PY="$DIR/.venv/Scripts/python.exe"   # a Windows venv, under Git Bash or WSL
 else
     PY=$(command -v python3 || command -v python)
 fi

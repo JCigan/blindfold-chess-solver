@@ -49,6 +49,11 @@ python3 -m venv .venv
 
 That's it — `./puzzle` finds `.venv` on its own. Requires Python 3.8+.
 
+On Windows use `puzzle.cmd` in place of `./puzzle` (same arguments), after
+`py -m venv .venv` and `.venv\Scripts\pip install -r requirements.txt`. Git Bash
+and WSL can use `./puzzle` as normal. Colour output needs Windows Terminal or
+PowerShell 7; set `NO_COLOR=1` if you get stray escape codes in the old console.
+
 Check it works (solves a few puzzles automatically):
 
 ```sh
