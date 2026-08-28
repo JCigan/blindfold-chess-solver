@@ -1,0 +1,10 @@
+#!/bin/sh
+# Blindfold lichess puzzle trainer. Uses the local .venv if one exists.
+DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+if [ -x "$DIR/.venv/bin/python" ]; then
+    PY="$DIR/.venv/bin/python"
+else
+    PY=$(command -v python3 || command -v python)
+fi
+cd "$DIR" || exit 1
+exec "$PY" -m blindpuzzle "$@"
